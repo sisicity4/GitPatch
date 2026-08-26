@@ -1,0 +1,2 @@
+# GitPatch
+Git,GitHubを使い始めたばかりの初学者が、自分のgitのcommitやpushなど、gitを使ってCLI上で可愛いペットと触れ合うことでGitでの開発モチベーションを上げるためのアプリ
