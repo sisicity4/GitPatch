@@ -27,3 +27,7 @@ replay_pid*
 .classpath
 .project
 .settings/
+
+# 授業資料 docs
+
+docs/ex/
