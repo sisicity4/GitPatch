@@ -19,13 +19,12 @@ public class Main {
 	private static void testRepositoryService() {
 		RepositoryService repositoryService = new RepositoryService();
 
-		boolean added = repositoryService.add(
-				"Gitぱっち本体",
-				"/Users/example/GitPatch");
-
-		if (!added) {
-			throw new AssertionError("リポジトリを登録できませんでした。");
-		}
+		checkRepositoryStatus(
+				"1件目のリポジトリ登録",
+				RepositoryStatus.SUCCESS,
+				repositoryService.add(
+						"Gitぱっち本体",
+						"/Users/example/GitPatch"));
 
 		checkInt(
 				"登録後のリポジトリ数",
@@ -42,26 +41,31 @@ public class Main {
 				"/Users/example/GitPatch",
 				repository.getPath());
 
-		checkFalse(
+		checkRepositoryStatus(
 				"同じパスの重複登録",
+				RepositoryStatus.DUPLICATE_PATH,
 				repositoryService.add("同じパスの登録", "/Users/example/GitPatch"));
-		checkFalse(
+		checkRepositoryStatus(
 				"空のリポジトリ名の登録",
+				RepositoryStatus.EMPTY_REPO_NAME,
 				repositoryService.add("", "/Users/example/empty-name"));
-		checkFalse(
+		checkRepositoryStatus(
 				"空のパスの登録",
+				RepositoryStatus.EMPTY_PATH,
 				repositoryService.add("空のパス", ""));
 
-		checkTrue(
+		checkRepositoryStatus(
 				"2件目のリポジトリ登録",
+				RepositoryStatus.SUCCESS,
 				repositoryService.add("練習用リポジトリ", "/Users/example/PracticeRepository"));
 		checkInt(
 				"2件目を登録した後のリポジトリ数",
 				2,
 				repositoryService.findAll().size());
 
-		checkTrue(
+		checkRepositoryStatus(
 				"1件目のリポジトリ更新",
+				RepositoryStatus.SUCCESS,
 				repositoryService.update(
 						0,
 						"Gitぱっち更新後",
@@ -77,8 +81,9 @@ public class Main {
 				"/Users/example/GitPatchUpdated",
 				updatedRepository.getPath());
 
-		checkFalse(
+		checkRepositoryStatus(
 				"重複したパスへの更新",
+				RepositoryStatus.DUPLICATE_PATH,
 				repositoryService.update(
 						0,
 						"重複する名前",
@@ -94,27 +99,38 @@ public class Main {
 				"/Users/example/GitPatchUpdated",
 				repositoryAfterFailedUpdate.getPath());
 
-		checkFalse(
+		checkRepositoryStatus(
 				"負の番号での更新",
+				RepositoryStatus.INDEX_OUT_OF_RANGE,
 				repositoryService.update(-1, "不正な番号", "/Users/example/Invalid"));
-		checkFalse(
+		checkRepositoryStatus(
 				"一覧外の番号での更新",
+				RepositoryStatus.INDEX_OUT_OF_RANGE,
 				repositoryService.update(
 						repositoryService.findAll().size(),
 						"不正な番号",
 						"/Users/example/Invalid"));
 
-		checkTrue("2件目のリポジトリ削除", repositoryService.delete(1));
+		checkRepositoryStatus(
+				"2件目のリポジトリ削除",
+				RepositoryStatus.SUCCESS,
+				repositoryService.delete(1));
 		checkInt(
 				"1件削除した後のリポジトリ数",
 				1,
 				repositoryService.findAll().size());
-		checkTrue("1件目のリポジトリ削除", repositoryService.delete(0));
+		checkRepositoryStatus(
+				"1件目のリポジトリ削除",
+				RepositoryStatus.SUCCESS,
+				repositoryService.delete(0));
 		checkInt(
 				"すべて削除した後のリポジトリ数",
 				0,
 				repositoryService.findAll().size());
-		checkFalse("空の一覧からの削除", repositoryService.delete(0));
+		checkRepositoryStatus(
+				"空の一覧からの削除",
+				RepositoryStatus.INDEX_OUT_OF_RANGE,
+				repositoryService.delete(0));
 	}
 
 	private static void testPetService() {
@@ -147,6 +163,18 @@ public class Main {
 	private static void checkString(String testName, String expected, String actual) {
 		if (!expected.equals(actual)) {
 			throw new AssertionError(testName + "：期待値=" + expected + "、実際=" + actual);
+		}
+
+		System.out.println("OK: " + testName + "（" + actual + "）");
+	}
+
+	private static void checkRepositoryStatus(
+			String testName,
+			RepositoryStatus expected,
+			RepositoryStatus actual) {
+		if (expected != actual) {
+			throw new AssertionError(
+					testName + "：期待値=" + expected + "、実際=" + actual);
 		}
 
 		System.out.println("OK: " + testName + "（" + actual + "）");
