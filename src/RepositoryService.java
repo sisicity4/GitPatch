@@ -5,6 +5,10 @@ public class RepositoryService {
 	private final List<RepositoryProfile> repositories = new ArrayList<>();
 
 	public boolean add(String repoName, String path) {
+		if (repoName == null || repoName.trim().equals("")) {
+			return false;
+		}
+
 		RepositoryProfile repository = new RepositoryProfile(repoName, path);
 		repositories.add(repository);
 
@@ -21,7 +25,7 @@ public class RepositoryService {
 			return false;
 		}
 
-		if (path == null || path.isBlank()) {
+		if (path == null || path.trim().equals("")) {
 			return false;
 		}
 
@@ -29,19 +33,9 @@ public class RepositoryService {
 			if (i != index && repositories.get(i).getPath().equals(path)) {
 				return false;
 			}
-			RepositoryProfile repository = repositories.get(index);
-			repository.setRepoName(repoName);
-			repository.setPath(path);
-
-			return true;
 		}
-		repoName = RepositoryProfile.getRepoName();
-
 		RepositoryProfile repository = repositories.get(index);
 		repository.setRepoName(repoName);
-		{
-			this.repoName = repoName;
-		}
 		repository.setPath(path);
 
 		return true;
