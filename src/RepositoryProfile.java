@@ -30,15 +30,9 @@ public class RepositoryProfile {
 	}
 
 	public void setRepoName(String repoName) {
-	    this.repoName = repoName;
+		this.repoName = repoName;
 	}
 
-		// TODO 自動生成されたメソッド・スタブ
+	// TODO 自動生成されたメソッド・スタブ
 
 }
-	//	1. repoNameが空でないか確認する
-	//	2. pathが空でないか確認する
-	//	3. 同じpathが既に登録済みでないか確認する
-	//	4. new RepositoryProfile(repoName, path) を作る
-	//	5. repositories.add(...) する
-	//	6. trueを返す

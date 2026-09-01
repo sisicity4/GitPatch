@@ -1,9 +1,10 @@
 
 public class GitActivityService {
 	public boolean isGitRepository(String path) {
-	    return false;
+		return false;
 	}
+
 	public String findLatestCommitId(String path) {
 		return null;
-		}
 	}
+}

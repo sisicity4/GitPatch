@@ -9,11 +9,20 @@ public class RepositoryService {
 			return false;
 		}
 
+		if (path == null || path.trim().equals("")) {
+			return false;
+		}
+
+		for (RepositoryProfile existingRepository : repositories) {
+			if (existingRepository.getPath().equals(path)) {
+				return false;
+			}
+		}
+
 		RepositoryProfile repository = new RepositoryProfile(repoName, path);
 		repositories.add(repository);
 
 		return true;
-
 	}
 
 	public List<RepositoryProfile> findAll() {
@@ -21,6 +30,9 @@ public class RepositoryService {
 	}
 
 	public boolean update(int index, String repoName, String path) {
+		if (repoName == null || repoName.trim().equals("")) {
+			return false;
+		}
 		if (index < 0 || index >= repositories.size()) {
 			return false;
 		}
