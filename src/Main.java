@@ -178,6 +178,19 @@ public class Main {
 		checkFalse(
 				"存在しないパスをGitリポジトリと判定しない",
 				gitActivityService.isGitRepository("/tmp/path-that-does-not-exist"));
+
+		String latestCommitId = gitActivityService.findLatestCommitId(".");
+
+		if (latestCommitId == null || latestCommitId.trim().equals("")) {
+			throw new AssertionError(
+					"GitPatch自身のパスで最新コミットIDを取得できませんでした。");
+		}
+
+		System.out.println(
+				"OK: GitPatch自身のパスでコミットIDを取得（"
+						+ latestCommitId
+						+ "）");
+
 	}
 
 }
