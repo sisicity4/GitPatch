@@ -2,11 +2,16 @@ public class Main {
 
 	public static void main(String[] args) {
 		if (args.length > 0 && "--test".equals(args[0])) {
+			System.out.println("=== 1. PetService ===");
 			testPetService();
+
+			System.out.println("\n=== 2. RepositoryService ===");
 			testRepositoryService();
+
+			System.out.println("\n=== 3. GitActivityService ===");
 			testGitActivityService();
 
-			System.out.println("すべてのテストが成功しました。");
+			System.out.println("\nすべてのテストが成功しました。");
 			return;
 		}
 
@@ -131,6 +136,7 @@ public class Main {
 				"空の一覧からの削除",
 				RepositoryStatus.INDEX_OUT_OF_RANGE,
 				repositoryService.delete(0));
+
 	}
 
 	private static void testPetService() {
@@ -180,6 +186,18 @@ public class Main {
 		System.out.println("OK: " + testName + "（" + actual + "）");
 	}
 
+	private static void checkGitStatus(
+			String testName,
+			GitActivityService.GitStatus expected,
+			GitActivityService.GitStatus actual) {
+		if (expected != actual) {
+			throw new AssertionError(
+					testName + "：期待値=" + expected + "、実際=" + actual);
+		}
+
+		System.out.println("OK: " + testName + "（" + actual + "）");
+	}
+
 	private static void checkTrue(String testName, boolean actual) {
 		if (!actual) {
 			throw new AssertionError(testName + "：成功するはずでした。");
@@ -199,6 +217,33 @@ public class Main {
 	private static void testGitActivityService() {
 		GitActivityService gitActivityService = new GitActivityService();
 
+		checkGitStatus(
+				"GitPatch自身のGitStatus",
+				GitActivityService.GitStatus.SUCCESS,
+				gitActivityService.getStatus("."));
+		checkGitStatus(
+				"空パスのGitStatus",
+				GitActivityService.GitStatus.EMPTY_PATH,
+				gitActivityService.getStatus(""));
+		checkGitStatus(
+				"存在しないパスのGitStatus",
+				GitActivityService.GitStatus.PATH_NOT_FOUND,
+				gitActivityService.getStatus("/tmp/path-that-does-not-exist"));
+		checkGitStatus(
+				"GitではないフォルダのGitStatus",
+				GitActivityService.GitStatus.NOT_GIT_REPOSITORY,
+				gitActivityService.getStatus("/tmp/gitpatch-not-a-repository"));
+
+		RepositoryProfile repository = new RepositoryProfile(
+				"テスト用リポジトリ",
+				"/tmp/test-repository");
+
+		checkTrue(
+				"初回のコミットは新しいコミットと判定する",
+				gitActivityService.isNewCommit(repository, "commit-001"));
+
+		repository.setLastCheckedCommitId("commit-001");
+
 		checkTrue(
 				"GitPatch自身をGitリポジトリとして判定",
 				gitActivityService.isGitRepository("."));
@@ -206,6 +251,14 @@ public class Main {
 		checkFalse(
 				"存在しないパスをGitリポジトリと判定しない",
 				gitActivityService.isGitRepository("/tmp/path-that-does-not-exist"));
+
+		checkFalse(
+				"同じコミットIDは新しいコミットと判定しない",
+				gitActivityService.isNewCommit(repository, "commit-001"));
+
+		checkTrue(
+				"異なるコミットIDは新しいコミットと判定する",
+				gitActivityService.isNewCommit(repository, "commit-002"));
 
 		String latestCommitId = gitActivityService.findLatestCommitId(".");
 
