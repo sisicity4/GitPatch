@@ -95,7 +95,6 @@ public class GitActivityService {
 		if (repository == null || latestCommitId == null) {
 			return false;
 		}
-
 		return !latestCommitId.equals(repository.getLastCheckedCommitId());
 	}
 

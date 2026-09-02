@@ -1,6 +1,18 @@
 public class Main {
 
 	public static void main(String[] args) {
+
+		Pet pet = new Pet();
+		PetService petService = new PetService();
+		GitActivityService gitActivityService = new GitActivityService();
+		RepositoryService repositoryService = new RepositoryService();
+
+		Menu menu = new Menu(
+				pet,
+				petService,
+				gitActivityService,
+				repositoryService);
+
 		if (args.length > 0 && "--test".equals(args[0])) {
 			System.out.println("=== 1. PetService ===");
 			testPetService();
@@ -14,10 +26,6 @@ public class Main {
 			System.out.println("\nすべてのテストが成功しました。");
 			return;
 		}
-
-		Pet pet = new Pet();
-		PetService petService = new PetService();
-		Menu menu = new Menu(pet, petService);
 		menu.start();
 	}
 
