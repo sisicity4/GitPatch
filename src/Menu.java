@@ -82,22 +82,9 @@ public class Menu {
 	}
 
 	private void feedPet() {
-		System.out.print("ごはんで回復する量を入力: ");
-		String input = normalizeNumberInput(scanner.nextLine());
-
-		try {
-			int amount = Integer.parseInt(input);
-			if (amount <= 0) {
-				System.out.println("1以上の数を入力してください。");
-				return;
-			}
-
-			petService.feed(pet, amount);
-			System.out.println("ぱっちはごはんを食べた。満腹度が上がった！");
-			showPetStatus();
-		} catch (NumberFormatException e) {
-			System.out.println("数字を入力してください。");
-		}
+		petService.feed(pet);
+		System.out.println("ぱっちはごはんを食べた。満腹度が20回復した！");
+		showPetStatus();
 	}
 
 	private void strokePet() {

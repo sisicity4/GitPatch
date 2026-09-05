@@ -159,8 +159,13 @@ public class Main {
 		checkInt("110経験値になった後のレベル", 2, pet.getLevel());
 		checkInt("レベルアップ後に残る経験値", 10, pet.getExp());
 
-		petService.feed(pet, 200);
-		checkInt("満腹度の上限", 100, pet.getHunger());
+		petService.feed(pet);
+		checkInt("1回のごはんで満腹度が20増える", 70, pet.getHunger());
+
+		petService.feed(pet);
+		petService.feed(pet);
+		petService.feed(pet);
+		checkInt("ごはんを何回あげても満腹度は100が上限", 100, pet.getHunger());
 
 		petService.gainExperience(pet, -10);
 		checkInt("負の経験値を渡した後の経験値", 10, pet.getExp());
