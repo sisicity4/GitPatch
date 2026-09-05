@@ -1,0 +1,3 @@
+public enum RepositoryStatus {
+	SUCCESS, EMPTY_REPO_NAME, EMPTY_PATH, DUPLICATE_PATH, INDEX_OUT_OF_RANGE
+}
