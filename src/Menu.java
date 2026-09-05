@@ -2,6 +2,21 @@ import java.util.List;
 import java.util.Scanner;
 
 public class Menu {
+	private String normalizeNumberInput(String input) {
+		return input
+				.replace('０', '0')
+				.replace('１', '1')
+				.replace('２', '2')
+				.replace('３', '3')
+				.replace('４', '4')
+				.replace('５', '5')
+				.replace('６', '6')
+				.replace('７', '7')
+				.replace('８', '8')
+				.replace('９', '9')
+				.trim();
+	}
+
 	private final Scanner scanner;
 	private final Pet pet;
 	private final PetService petService;
@@ -25,7 +40,7 @@ public class Menu {
 
 		while (running) {
 			showMenu();
-			String input = scanner.nextLine().trim();
+			String input = normalizeNumberInput(scanner.nextLine());
 
 			switch (input) {
 			case "1" -> showPetStatus();
@@ -68,7 +83,7 @@ public class Menu {
 
 	private void feedPet() {
 		System.out.print("ごはんで回復する量を入力: ");
-		String input = scanner.nextLine().trim();
+		String input = normalizeNumberInput(scanner.nextLine());
 
 		try {
 			int amount = Integer.parseInt(input);
@@ -94,7 +109,7 @@ public class Menu {
 	private void addRepository() {
 		System.out.print("リポジトリ名を入力: ");
 		String repoName = scanner.nextLine().trim();
-		System.out.print("リポジトリのパスを入力: ");
+		System.out.print("リポジトリのファイルパスを入力: ");
 		String path = scanner.nextLine().trim();
 
 		RepositoryStatus status = repositoryService.add(repoName, path);
@@ -158,7 +173,8 @@ public class Menu {
 
 		showRepositories();
 		System.out.print("確認するリポジトリの番号を入力: ");
-		String input = scanner.nextLine().trim();
+		String input = normalizeNumberInput(scanner.nextLine());
+
 
 		try {
 			int index = Integer.parseInt(input) - 1;
