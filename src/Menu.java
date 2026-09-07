@@ -162,7 +162,6 @@ public class Menu {
 		System.out.print("確認するリポジトリの番号を入力: ");
 		String input = normalizeNumberInput(scanner.nextLine());
 
-
 		try {
 			int index = Integer.parseInt(input) - 1;
 			if (index < 0 || index >= repositories.size()) {
