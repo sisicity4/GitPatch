@@ -1,38 +1,38 @@
 public class RepositoryProfile {
-	private String repoName;
-	private String path;
-	private String lastCheckedCommitId;
 
-	public RepositoryProfile(String repoName, String path) {
-		this.repoName = repoName;
-		this.path = path;
-		this.lastCheckedCommitId = null;
-	}
+  private String repoName;
+  private String path;
+  private String lastCheckedCommitId;
 
-	public String getRepoName() {
-		return repoName;
-	}
+  public RepositoryProfile(String repoName, String path) {
+    this.repoName = repoName;
+    this.path = path;
+    this.lastCheckedCommitId = null;
+  }
 
-	public String getPath() {
-		return path;
-	}
+  public String getRepoName() {
+    return repoName;
+  }
 
-	public String getLastCheckedCommitId() {
-		return lastCheckedCommitId;
-	}
+  public String getPath() {
+    return path;
+  }
 
-	public void setPath(String path) {
-		this.path = path;
-	}
+  public String getLastCheckedCommitId() {
+    return lastCheckedCommitId;
+  }
 
-	public void setLastCheckedCommitId(String lastCheckedCommitId) {
-		this.lastCheckedCommitId = lastCheckedCommitId;
-	}
+  public void setPath(String path) {
+    this.path = path;
+  }
 
-	public void setRepoName(String repoName) {
-		this.repoName = repoName;
-	}
+  public void setLastCheckedCommitId(String lastCheckedCommitId) {
+    this.lastCheckedCommitId = lastCheckedCommitId;
+  }
 
-	// TODO 自動生成されたメソッド・スタブ
+  public void setRepoName(String repoName) {
+    this.repoName = repoName;
+  }
 
+  // TODO 自動生成されたメソッド・スタブ
 }

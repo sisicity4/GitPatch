@@ -32,11 +32,10 @@ java -cp bin Main
 ペット機能の自動テストを実行する場合は、次を使います。
 
 ```sh
-java -cp bin Main --test
+java -cp bin MainTest
 ```
 
 ## 資料
 
 - 企画とMVP範囲：`docs/アプリ企画書.md`
-- オフライン実装手順：`docs/ex/実装手順書.md`
-- 授業参考資料：`docs/ex/Java授業参考資料/`
+- 発展要素の説明：`docs/授業範囲外・発展要素の説明.md`

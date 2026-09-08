@@ -1,4 +1,1 @@
-
-public class InventoryItem {
-
-}
+public class InventoryItem {}
