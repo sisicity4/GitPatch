@@ -16,8 +16,10 @@ public class ActivityStreak {
 
   public enum StreakName {
     NONE,
-    GIT_APPRENTICE,
-    GIT_MAN,
+    COMMIT_ROOKIE,
+    STREAK_KEEPER,
+    GIT_DEVELOPER,
+    ACTIVE_CONTRIBUTOR,
     GIT_STAR,
   }
 

@@ -162,8 +162,10 @@ public class Menu {
   private String displayNameOf(ActivityStreak.StreakName name) {
     return switch (name) {
       case NONE -> "なし";
-      case GIT_APPRENTICE -> "Git見習い";
-      case GIT_MAN -> "Gitマン";
+      case COMMIT_ROOKIE -> "コミットルーキー";
+      case STREAK_KEEPER -> "ストリークキーパー";
+      case GIT_DEVELOPER -> "Gitデベロッパー";
+      case ACTIVE_CONTRIBUTOR -> "アクティブコントリビューター";
       case GIT_STAR -> "Gitスター";
     };
   }

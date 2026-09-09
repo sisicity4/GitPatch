@@ -381,7 +381,12 @@ public class MainTest {
       "連続活動：1日",
       output
     );
-    checkContains("新しい活動で達成メッセージを表示する", "今日の活動達成！", output);
+    checkContains(
+      "新しい活動で達成メッセージを表示する",
+      "今日の活動達成！",
+      output
+    );
+    checkContains("初回の称号を表示する", "称号：コミットルーキー", output);
   }
 
   private static void testMenuShowsStreakWhenCommitIsUnchanged() {
@@ -451,11 +456,7 @@ public class MainTest {
       new SequenceGitActivityService("commit-001", "commit-002")
     );
 
-    checkContains(
-      "同日の別コミットでXPが2回分になる",
-      "経験値: 60",
-      output
-    );
+    checkContains("同日の別コミットでXPが2回分になる", "経験値: 60", output);
     checkInt(
       "同日の別コミットでstreak表示が2回ある",
       2,
@@ -480,16 +481,20 @@ public class MainTest {
       new SequenceGitActivityService("commit-003")
     );
 
-    checkContains("3日目の達成メッセージを表示する", "今日の活動達成！", output);
+    checkContains(
+      "3日目の達成メッセージを表示する",
+      "今日の活動達成！",
+      output
+    );
     checkContains(
       "3日目の節目メッセージを表示する",
       "すごい！3日連続でGit活動を達成した！",
       output
     );
-    checkContains("3日目の称号表示", "称号：Git見習い", output);
+    checkContains("3日目の称号表示", "称号：Gitデベロッパー", output);
     checkContains(
       "称号獲得メッセージを表示する",
-      "称号「Git見習い」を獲得！",
+      "称号「Gitデベロッパー」を獲得！",
       output
     );
   }
@@ -539,7 +544,7 @@ public class MainTest {
     checkContains("節目後の通常活動を表示する", "連続活動：4日", output);
     checkFalse(
       "節目後に称号獲得メッセージを繰り返さない",
-      output.contains("称号「Git見習い」を獲得！")
+      output.contains("称号「Gitデベロッパー」を獲得！")
     );
   }
 
@@ -626,8 +631,8 @@ public class MainTest {
 
     checkInt("初回の活動日は連続1日になる", 1, streak.getCurrentStreak());
     checkTrue(
-      "初期の称号はNONEになる",
-      streak.getStreakName() == ActivityStreak.StreakName.NONE
+      "初回活動の称号はCOMMIT_ROOKIEになる",
+      streak.getStreakName() == ActivityStreak.StreakName.COMMIT_ROOKIE
     );
   }
 
@@ -704,30 +709,18 @@ public class MainTest {
   }
 
   private static void testStreakNameBoundaries() {
+    checkStreakName("0日目の称号", ActivityStreak.StreakName.NONE, 0);
+    checkStreakName("2日目の称号", ActivityStreak.StreakName.STREAK_KEEPER, 2);
+    checkStreakName("3日目の称号", ActivityStreak.StreakName.GIT_DEVELOPER, 3);
+    checkStreakName("6日目の称号", ActivityStreak.StreakName.GIT_DEVELOPER, 6);
     checkStreakName(
-      "0日目の称号",
-      ActivityStreak.StreakName.NONE,
-      0
+      "7日目の称号",
+      ActivityStreak.StreakName.ACTIVE_CONTRIBUTOR,
+      7
     );
-    checkStreakName(
-      "2日目の称号",
-      ActivityStreak.StreakName.NONE,
-      2
-    );
-    checkStreakName(
-      "3日目の称号",
-      ActivityStreak.StreakName.GIT_APPRENTICE,
-      3
-    );
-    checkStreakName(
-      "6日目の称号",
-      ActivityStreak.StreakName.GIT_APPRENTICE,
-      6
-    );
-    checkStreakName("7日目の称号", ActivityStreak.StreakName.GIT_MAN, 7);
     checkStreakName(
       "13日目の称号",
-      ActivityStreak.StreakName.GIT_MAN,
+      ActivityStreak.StreakName.ACTIVE_CONTRIBUTOR,
       13
     );
     checkStreakName("14日目の称号", ActivityStreak.StreakName.GIT_STAR, 14);
@@ -758,12 +751,11 @@ public class MainTest {
 
     checkTrue(
       "活動更新後に称号を保持する",
-      streak.getStreakName() == ActivityStreak.StreakName.GIT_APPRENTICE
+      streak.getStreakName() == ActivityStreak.StreakName.GIT_DEVELOPER
     );
   }
 
-  private static class SequenceGitActivityService
-    extends GitActivityService {
+  private static class SequenceGitActivityService extends GitActivityService {
 
     private final String[] commitIds;
     private int nextCommitIndex;

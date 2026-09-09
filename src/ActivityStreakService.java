@@ -22,10 +22,16 @@ public class ActivityStreakService {
       return ActivityStreak.StreakName.GIT_STAR;
     }
     if (currentStreak >= 7) {
-      return ActivityStreak.StreakName.GIT_MAN;
+      return ActivityStreak.StreakName.ACTIVE_CONTRIBUTOR;
     }
     if (currentStreak >= 3) {
-      return ActivityStreak.StreakName.GIT_APPRENTICE;
+      return ActivityStreak.StreakName.GIT_DEVELOPER;
+    }
+    if (currentStreak >= 2) {
+      return ActivityStreak.StreakName.STREAK_KEEPER;
+    }
+    if (currentStreak >= 1) {
+      return ActivityStreak.StreakName.COMMIT_ROOKIE;
     }
     return ActivityStreak.StreakName.NONE;
   }
