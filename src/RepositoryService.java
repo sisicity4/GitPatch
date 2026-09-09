@@ -2,63 +2,68 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RepositoryService {
-	private final List<RepositoryProfile> repositories = new ArrayList<>();
 
-	public RepositoryStatus add(String repoName, String path) {
-		if (repoName == null || repoName.trim().equals("")) {
-			return RepositoryStatus.EMPTY_REPO_NAME;
-		}
+  private final List<RepositoryProfile> repositories = new ArrayList<>();
 
-		if (path == null || path.trim().equals("")) {
-			return RepositoryStatus.EMPTY_PATH;
-		}
+  public RepositoryStatus add(String repoName, String path) {
+    if (repoName == null || repoName.trim().equals("")) {
+      return RepositoryStatus.EMPTY_REPO_NAME;
+    }
 
-		for (RepositoryProfile existingRepository : repositories) {
-			if (existingRepository.getPath().equals(path)) {
-				return RepositoryStatus.DUPLICATE_PATH;
-			}
-		}
+    if (path == null || path.trim().equals("")) {
+      return RepositoryStatus.EMPTY_PATH;
+    }
 
-		RepositoryProfile repository = new RepositoryProfile(repoName, path);
-		repositories.add(repository);
-		return RepositoryStatus.SUCCESS;
-	}
+    for (RepositoryProfile existingRepository : repositories) {
+      if (existingRepository.getPath().equals(path)) {
+        return RepositoryStatus.DUPLICATE_PATH;
+      }
+    }
 
-	public List<RepositoryProfile> findAll() {
-		return List.copyOf(repositories);
-	}
+    RepositoryProfile repository = new RepositoryProfile(repoName, path);
+    repositories.add(repository);
+    return RepositoryStatus.SUCCESS;
+  }
 
-	public RepositoryStatus update(int index, String repoName, String path) {
-		if (index < 0 || index >= repositories.size()) {
-			return RepositoryStatus.INDEX_OUT_OF_RANGE;
-		}
+  public List<RepositoryProfile> findAll() {
+    return List.copyOf(repositories);
+  }
 
-		if (repoName == null || repoName.trim().equals("")) {
-			return RepositoryStatus.EMPTY_REPO_NAME;
-		}
+  public RepositoryStatus update(int index, String repoName, String path) {
+    if (index < 0 || index >= repositories.size()) {
+      return RepositoryStatus.INDEX_OUT_OF_RANGE;
+    }
 
-		if (path == null || path.trim().equals("")) {
-			return RepositoryStatus.EMPTY_PATH;
-		}
+    if (repoName == null || repoName.trim().equals("")) {
+      return RepositoryStatus.EMPTY_REPO_NAME;
+    }
 
-		for (int i = 0; i < repositories.size(); i++) {
-			if (i != index && repositories.get(i).getPath().equals(path)) {
-				return RepositoryStatus.DUPLICATE_PATH;
-			}
-		}
+    if (path == null || path.trim().equals("")) {
+      return RepositoryStatus.EMPTY_PATH;
+    }
 
-		RepositoryProfile repository = repositories.get(index);
-		repository.setRepoName(repoName);
-		repository.setPath(path);
-		return RepositoryStatus.SUCCESS;
-	}
+    for (int i = 0; i < repositories.size(); i++) {
+      if (i != index && repositories.get(i).getPath().equals(path)) {
+        return RepositoryStatus.DUPLICATE_PATH;
+      }
+    }
 
-	public RepositoryStatus delete(int index) {
-		if (index < 0 || index >= repositories.size()) {
-			return RepositoryStatus.INDEX_OUT_OF_RANGE;
-		}
+    RepositoryProfile repository = repositories.get(index);
+    String previousPath = repository.getPath();
+    repository.setRepoName(repoName);
+    repository.setPath(path);
+    if (!previousPath.equals(path)) {
+      repository.clearRewardedCommitIds();
+    }
+    return RepositoryStatus.SUCCESS;
+  }
 
-		repositories.remove(index);
-		return RepositoryStatus.SUCCESS;
-	}
+  public RepositoryStatus delete(int index) {
+    if (index < 0 || index >= repositories.size()) {
+      return RepositoryStatus.INDEX_OUT_OF_RANGE;
+    }
+
+    repositories.remove(index);
+    return RepositoryStatus.SUCCESS;
+  }
 }
