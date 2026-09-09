@@ -31,6 +31,25 @@ public class GitActivityService {
     }
   }
 
+  public static class CommitResult {
+
+    private final GitStatus status;
+    private final String commitId;
+
+    public CommitResult(GitStatus status, String commitId) {
+      this.status = status;
+      this.commitId = commitId;
+    }
+
+    public GitStatus getStatus() {
+      return status;
+    }
+
+    public String getCommitId() {
+      return commitId;
+    }
+  }
+
   public GitStatus getStatus(String path) {
     if (path == null || path.trim().equals("")) {
       return GitStatus.EMPTY_PATH;
@@ -51,6 +70,9 @@ public class GitActivityService {
     );
 
     if (repositoryCheck.status != GitStatus.SUCCESS) {
+      if (isNotGitRepositoryOutput(repositoryCheck.output)) {
+        return GitStatus.NOT_GIT_REPOSITORY;
+      }
       return repositoryCheck.status;
     }
 
@@ -60,11 +82,10 @@ public class GitActivityService {
 
     CommandResult commitCheck = runGitCommand(path, "log", "-1", "--format=%H");
 
-    if (commitCheck.status == GitStatus.NOT_GIT_REPOSITORY) {
-      return GitStatus.NO_COMMIT;
-    }
-
     if (commitCheck.status != GitStatus.SUCCESS) {
+      if (isNoCommitOutput(commitCheck.output)) {
+        return GitStatus.NO_COMMIT;
+      }
       return commitCheck.status;
     }
 
@@ -80,14 +101,32 @@ public class GitActivityService {
     return status == GitStatus.SUCCESS || status == GitStatus.NO_COMMIT;
   }
 
-  public String findLatestCommitId(String path) {
-    if (getStatus(path) != GitStatus.SUCCESS) {
-      return null;
+  public CommitResult findLatestCommit(String path) {
+    GitStatus status = getStatus(path);
+    if (status != GitStatus.SUCCESS) {
+      return new CommitResult(status, null);
     }
 
     CommandResult result = runGitCommand(path, "log", "-1", "--format=%H");
+    if (result.status != GitStatus.SUCCESS) {
+      if (isNoCommitOutput(result.output)) {
+        return new CommitResult(GitStatus.NO_COMMIT, null);
+      }
+      return new CommitResult(result.status, null);
+    }
 
-    return result.status == GitStatus.SUCCESS ? result.output : null;
+    if (result.output == null || result.output.equals("")) {
+      return new CommitResult(GitStatus.NO_COMMIT, null);
+    }
+
+    return new CommitResult(GitStatus.SUCCESS, result.output);
+  }
+
+  public String findLatestCommitId(String path) {
+    CommitResult result = findLatestCommit(path);
+    return result.getStatus() == GitStatus.SUCCESS
+      ? result.getCommitId()
+      : null;
   }
 
   public boolean isNewCommit(
@@ -97,7 +136,7 @@ public class GitActivityService {
     if (repository == null || latestCommitId == null) {
       return false;
     }
-    return !latestCommitId.equals(repository.getLastCheckedCommitId());
+    return !repository.hasRewardedCommitId(latestCommitId);
   }
 
   private CommandResult runGitCommand(String path, String... arguments) {
@@ -112,27 +151,37 @@ public class GitActivityService {
 
     try {
       Process process = processBuilder.start();
-      int exitCode = process.waitFor();
-
+      String output;
       try (
         BufferedReader reader = new BufferedReader(
           new InputStreamReader(process.getInputStream())
         )
       ) {
-        String output = reader.readLine();
+        output = reader.readLine();
         output = output == null ? null : output.trim();
-
-        if (exitCode != 0) {
-          return new CommandResult(GitStatus.NOT_GIT_REPOSITORY, output);
-        }
-
-        return new CommandResult(GitStatus.SUCCESS, output);
       }
+      int exitCode = process.waitFor();
+
+      if (exitCode != 0) {
+        return new CommandResult(GitStatus.GIT_COMMAND_FAILED, output);
+      }
+
+      return new CommandResult(GitStatus.SUCCESS, output);
     } catch (IOException e) {
       return new CommandResult(GitStatus.GIT_COMMAND_FAILED, null);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       return new CommandResult(GitStatus.INTERRUPTED, null);
     }
+  }
+
+  private boolean isNotGitRepositoryOutput(String output) {
+    return (
+      output != null && output.toLowerCase().contains("not a git repository")
+    );
+  }
+
+  private boolean isNoCommitOutput(String output) {
+    return output != null && output.contains("does not have any commits yet");
   }
 }

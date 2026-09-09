@@ -1,11 +1,17 @@
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.Scanner;
+import java.util.stream.Stream;
 
 public class MainTest {
 
@@ -81,6 +87,10 @@ public class MainTest {
       repositoryService.findAll().size()
     );
 
+    repositoryService
+      .findAll()
+      .get(0)
+      .setLastCheckedCommitId("commit-before-path-change");
     checkRepositoryStatus(
       "1件目のリポジトリ更新",
       RepositoryStatus.SUCCESS,
@@ -89,6 +99,11 @@ public class MainTest {
         "Gitぱっち更新後",
         "/Users/example/GitPatchUpdated"
       )
+    );
+
+    checkTrue(
+      "リポジトリのパス変更で確認済みコミットをリセットする",
+      repositoryService.findAll().get(0).getLastCheckedCommitId() == null
     );
 
     RepositoryProfile updatedRepository = repositoryService.findAll().get(0);
@@ -278,70 +293,100 @@ public class MainTest {
   private static void testGitActivityService() {
     GitActivityService gitActivityService = new GitActivityService();
 
-    checkGitStatus(
-      "GitPatch自身のGitStatus",
-      GitActivityService.GitStatus.SUCCESS,
-      gitActivityService.getStatus(".")
-    );
-    checkGitStatus(
-      "空パスのGitStatus",
-      GitActivityService.GitStatus.EMPTY_PATH,
-      gitActivityService.getStatus("")
-    );
-    checkGitStatus(
-      "存在しないパスのGitStatus",
-      GitActivityService.GitStatus.PATH_NOT_FOUND,
-      gitActivityService.getStatus("/tmp/path-that-does-not-exist")
-    );
-    checkGitStatus(
-      "GitではないフォルダのGitStatus",
-      GitActivityService.GitStatus.NOT_GIT_REPOSITORY,
-      gitActivityService.getStatus("/tmp/gitpatch-not-a-repository")
-    );
+    Path nonGitDirectory = createTempDirectory("gitpatch-test-non-git-");
+    Path emptyGitRepository = createGitRepository(false);
+    Path committedGitRepository = createGitRepository(true);
 
-    RepositoryProfile repository = new RepositoryProfile(
-      "テスト用リポジトリ",
-      "/tmp/test-repository"
-    );
-
-    checkTrue(
-      "初回のコミットは新しいコミットと判定する",
-      gitActivityService.isNewCommit(repository, "commit-001")
-    );
-
-    repository.setLastCheckedCommitId("commit-001");
-
-    checkTrue(
-      "GitPatch自身をGitリポジトリとして判定",
-      gitActivityService.isGitRepository(".")
-    );
-
-    checkFalse(
-      "存在しないパスをGitリポジトリと判定しない",
-      gitActivityService.isGitRepository("/tmp/path-that-does-not-exist")
-    );
-
-    checkFalse(
-      "同じコミットIDは新しいコミットと判定しない",
-      gitActivityService.isNewCommit(repository, "commit-001")
-    );
-
-    checkTrue(
-      "異なるコミットIDは新しいコミットと判定する",
-      gitActivityService.isNewCommit(repository, "commit-002")
-    );
-
-    String latestCommitId = gitActivityService.findLatestCommitId(".");
-
-    if (latestCommitId == null || latestCommitId.trim().equals("")) {
-      throw new AssertionError(
-        "GitPatch自身のパスで最新コミットIDを取得できませんでした。"
+    try {
+      checkGitStatus(
+        "空パスのGitStatus",
+        GitActivityService.GitStatus.EMPTY_PATH,
+        gitActivityService.getStatus("")
       );
-    }
+      checkGitStatus(
+        "存在しないパスのGitStatus",
+        GitActivityService.GitStatus.PATH_NOT_FOUND,
+        gitActivityService.getStatus(
+          nonGitDirectory.resolve("missing").toString()
+        )
+      );
+      checkGitStatus(
+        "GitではないフォルダのGitStatus",
+        GitActivityService.GitStatus.NOT_GIT_REPOSITORY,
+        gitActivityService.getStatus(nonGitDirectory.toString())
+      );
+      checkGitStatus(
+        "コミット前のGitStatus",
+        GitActivityService.GitStatus.NO_COMMIT,
+        gitActivityService.getStatus(emptyGitRepository.toString())
+      );
+      checkGitStatus(
+        "コミット済みGitStatus",
+        GitActivityService.GitStatus.SUCCESS,
+        gitActivityService.getStatus(committedGitRepository.toString())
+      );
+      checkGitStatus(
+        "コミット前の最新コミット取得結果",
+        GitActivityService.GitStatus.NO_COMMIT,
+        gitActivityService
+          .findLatestCommit(emptyGitRepository.toString())
+          .getStatus()
+      );
 
-    System.out.println(
-      "OK: GitPatch自身のパスでコミットIDを取得（" + latestCommitId + "）"
-    );
+      RepositoryProfile repository = new RepositoryProfile(
+        "テスト用リポジトリ",
+        committedGitRepository.toString()
+      );
+
+      checkTrue(
+        "初回のコミットは新しいコミットと判定する",
+        gitActivityService.isNewCommit(repository, "commit-001")
+      );
+
+      repository.setLastCheckedCommitId("commit-001");
+
+      checkTrue(
+        "コミット済みフォルダをGitリポジトリとして判定",
+        gitActivityService.isGitRepository(committedGitRepository.toString())
+      );
+
+      checkFalse(
+        "GitではないフォルダをGitリポジトリと判定しない",
+        gitActivityService.isGitRepository(nonGitDirectory.toString())
+      );
+
+      checkFalse(
+        "同じコミットIDは新しいコミットと判定しない",
+        gitActivityService.isNewCommit(repository, "commit-001")
+      );
+
+      checkTrue(
+        "異なるコミットIDは新しいコミットと判定する",
+        gitActivityService.isNewCommit(repository, "commit-002")
+      );
+
+      GitActivityService.CommitResult latestCommit =
+        gitActivityService.findLatestCommit(committedGitRepository.toString());
+      checkGitStatus(
+        "コミット済みフォルダの最新コミット取得結果",
+        GitActivityService.GitStatus.SUCCESS,
+        latestCommit.getStatus()
+      );
+      checkTrue(
+        "コミット済みフォルダで最新コミットIDを取得する",
+        latestCommit.getCommitId() != null &&
+          !latestCommit.getCommitId().isBlank()
+      );
+      System.out.println(
+        "OK: 一時Gitリポジトリで最新コミットIDを取得（" +
+          latestCommit.getCommitId() +
+          "）"
+      );
+    } finally {
+      deleteRecursively(nonGitDirectory);
+      deleteRecursively(emptyGitRepository);
+      deleteRecursively(committedGitRepository);
+    }
   }
 
   private static void testActivityStreak() {
@@ -359,21 +404,25 @@ public class MainTest {
     testMenuShowsStreakAfterNewCommit();
     testMenuShowsStreakWhenCommitIsUnchanged();
     testMenuShowsStreakAfterGitError();
+    testMenuShowsStreakAfterNoCommit();
     testMenuShowsStreakAfterRepositoryCancel();
     testMenuShowsStreakForSameDayDifferentCommit();
+    testMenuDoesNotRewardHistoricalCommitAgain();
     testMenuShowsAchievementAndTitleAtThreeDays();
+    testMenuShowsTitlesAtSevenAndFourteenDays();
     testMenuShowsResetMessageAfterGap();
     testMenuDoesNotRepeatMilestoneMessageAfterBoundary();
   }
 
   private static void testMenuShowsStreakAfterNewCommit() {
     RepositoryService repositoryService = new RepositoryService();
-    repositoryService.add("GitPatch", ".");
+    repositoryService.add("テスト用リポジトリ", "/tmp/test-repository");
 
     String output = runMenu(
       "4\n1\n0\n",
       repositoryService,
-      activityStreakServiceAt("2026-09-09")
+      activityStreakServiceAt("2026-09-09"),
+      new SequenceGitActivityService("commit-001")
     );
 
     checkContains(
@@ -391,14 +440,14 @@ public class MainTest {
 
   private static void testMenuShowsStreakWhenCommitIsUnchanged() {
     RepositoryService repositoryService = new RepositoryService();
-    repositoryService.add("GitPatch", ".");
-    String latestCommitId = new GitActivityService().findLatestCommitId(".");
-    repositoryService.findAll().get(0).setLastCheckedCommitId(latestCommitId);
+    repositoryService.add("テスト用リポジトリ", "/tmp/test-repository");
+    repositoryService.findAll().get(0).setLastCheckedCommitId("commit-001");
 
     String output = runMenu(
       "4\n1\n0\n",
       repositoryService,
-      activityStreakServiceAt("2026-09-09")
+      activityStreakServiceAt("2026-09-09"),
+      new SequenceGitActivityService("commit-001")
     );
 
     checkContains(
@@ -418,9 +467,15 @@ public class MainTest {
     String output = runMenu(
       "4\n1\n0\n",
       repositoryService,
-      activityStreakServiceAt("2026-09-09")
+      activityStreakServiceAt("2026-09-09"),
+      new StatusGitActivityService(GitActivityService.GitStatus.PATH_NOT_FOUND)
     );
 
+    checkContains(
+      "Gitエラーを活動なしと混同しない",
+      "指定されたパスが見つかりません。登録内容を確認してください。",
+      output
+    );
     checkContains(
       "Gitエラーの案内後にstreakを表示する",
       "連続活動：0日",
@@ -428,9 +483,39 @@ public class MainTest {
     );
   }
 
+  private static void testMenuShowsStreakAfterNoCommit() {
+    RepositoryService repositoryService = new RepositoryService();
+    Path emptyGitRepository = createGitRepository(false);
+    repositoryService.add(
+      "コミット前のリポジトリ",
+      emptyGitRepository.toString()
+    );
+
+    try {
+      String output = runMenu(
+        "4\n1\n0\n",
+        repositoryService,
+        activityStreakServiceAt("2026-09-09")
+      );
+
+      checkContains(
+        "コミットなしを活動なしと混同しない",
+        "まだコミットがありません。最初のコミット後に確認してください。",
+        output
+      );
+      checkContains(
+        "コミットなしの案内後にstreakを表示する",
+        "連続活動：0日",
+        output
+      );
+    } finally {
+      deleteRecursively(emptyGitRepository);
+    }
+  }
+
   private static void testMenuShowsStreakAfterRepositoryCancel() {
     RepositoryService repositoryService = new RepositoryService();
-    repositoryService.add("GitPatch", ".");
+    repositoryService.add("テスト用リポジトリ", "/tmp/test-repository");
 
     String output = runMenu(
       "4\n0\n0\n",
@@ -461,6 +546,34 @@ public class MainTest {
       "同日の別コミットでstreak表示が2回ある",
       2,
       countOccurrences(output, "連続活動：1日")
+    );
+  }
+
+  private static void testMenuDoesNotRewardHistoricalCommitAgain() {
+    RepositoryService repositoryService = new RepositoryService();
+    repositoryService.add("テスト用リポジトリ", "/tmp/test-repository");
+
+    String output = runMenu(
+      "4\n1\n4\n1\n4\n1\n0\n",
+      repositoryService,
+      activityStreakServiceAt("2026-09-09"),
+      new SequenceGitActivityService("commit-001", "commit-002", "commit-001")
+    );
+
+    checkInt(
+      "過去に報酬済みのコミットを再報酬しない",
+      2,
+      countOccurrences(output, "経験値を30得た")
+    );
+    checkContains(
+      "過去に報酬済みのコミットを活動なしとして扱う",
+      "新しいGit活動はありません。",
+      output
+    );
+    checkContains(
+      "過去に報酬済みのコミット後もstreakを表示する",
+      "連続活動：1日",
+      output
     );
   }
 
@@ -497,6 +610,41 @@ public class MainTest {
       "称号「Gitデベロッパー」を獲得！",
       output
     );
+  }
+
+  private static void testMenuShowsTitlesAtSevenAndFourteenDays() {
+    RepositoryService repositoryService = new RepositoryService();
+    repositoryService.add("テスト用リポジトリ", "/tmp/test-repository");
+
+    ActivityStreak sevenDayStreak = new ActivityStreak();
+    sevenDayStreak.setCurrentStreak(6);
+    sevenDayStreak.setLongestStreak(6);
+    sevenDayStreak.setLastActivityDate(LocalDate.parse("2026-09-08"));
+    String sevenDayOutput = runMenu(
+      "4\n1\n0\n",
+      repositoryService,
+      sevenDayStreak,
+      activityStreakServiceAt("2026-09-09"),
+      new SequenceGitActivityService("commit-007")
+    );
+    checkContains(
+      "7日目の称号表示",
+      "称号：アクティブコントリビューター",
+      sevenDayOutput
+    );
+
+    ActivityStreak fourteenDayStreak = new ActivityStreak();
+    fourteenDayStreak.setCurrentStreak(13);
+    fourteenDayStreak.setLongestStreak(13);
+    fourteenDayStreak.setLastActivityDate(LocalDate.parse("2026-09-08"));
+    String fourteenDayOutput = runMenu(
+      "4\n1\n0\n",
+      repositoryService,
+      fourteenDayStreak,
+      activityStreakServiceAt("2026-09-09"),
+      new SequenceGitActivityService("commit-014")
+    );
+    checkContains("14日目の称号表示", "称号：Gitスター", fourteenDayOutput);
   }
 
   private static void testMenuShowsResetMessageAfterGap() {
@@ -621,6 +769,108 @@ public class MainTest {
     LocalDate localDate = LocalDate.parse(date);
     Clock clock = Clock.fixed(localDate.atStartOfDay(zone).toInstant(), zone);
     return new ActivityStreakService(clock);
+  }
+
+  private static Path createTempDirectory(String prefix) {
+    try {
+      return Files.createTempDirectory(prefix);
+    } catch (IOException e) {
+      throw new AssertionError(
+        "テスト用一時フォルダを作成できませんでした。",
+        e
+      );
+    }
+  }
+
+  private static Path createGitRepository(boolean withCommit) {
+    Path repository = createTempDirectory("gitpatch-test-repository-");
+    runExternalCommand("git", "init", "--quiet", repository.toString());
+
+    if (withCommit) {
+      runExternalCommand(
+        "git",
+        "-C",
+        repository.toString(),
+        "config",
+        "user.name",
+        "GitPatch Test"
+      );
+      runExternalCommand(
+        "git",
+        "-C",
+        repository.toString(),
+        "config",
+        "user.email",
+        "gitpatch-test@example.com"
+      );
+      try {
+        Files.writeString(repository.resolve("README.md"), "test");
+      } catch (IOException e) {
+        deleteRecursively(repository);
+        throw new AssertionError("テスト用ファイルを作成できませんでした。", e);
+      }
+      runExternalCommand(
+        "git",
+        "-C",
+        repository.toString(),
+        "add",
+        "README.md"
+      );
+      runExternalCommand(
+        "git",
+        "-C",
+        repository.toString(),
+        "commit",
+        "--quiet",
+        "-m",
+        "test"
+      );
+    }
+
+    return repository;
+  }
+
+  private static void runExternalCommand(String... command) {
+    try {
+      Process process = new ProcessBuilder(command)
+        .redirectErrorStream(true)
+        .start();
+      String output = new String(
+        process.getInputStream().readAllBytes(),
+        StandardCharsets.UTF_8
+      );
+      int exitCode = process.waitFor();
+      if (exitCode != 0) {
+        throw new AssertionError(
+          "テスト用コマンドに失敗しました。終了コード=" +
+            exitCode +
+            " 出力=" +
+            output
+        );
+      }
+    } catch (IOException e) {
+      throw new AssertionError("テスト用コマンドを実行できませんでした。", e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new AssertionError("テスト用コマンドが中断されました。", e);
+    }
+  }
+
+  private static void deleteRecursively(Path path) {
+    try (Stream<Path> paths = Files.walk(path)) {
+      paths.sorted(Comparator.reverseOrder()).forEach(currentPath -> {
+        try {
+          Files.deleteIfExists(currentPath);
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      });
+    } catch (IOException | UncheckedIOException e) {
+      throw new AssertionError(
+        "テスト用一時フォルダを削除できませんでした。",
+        e
+      );
+    }
   }
 
   private static void testFirstActivityStartsStreak() {
@@ -770,10 +1020,24 @@ public class MainTest {
     }
 
     @Override
-    public String findLatestCommitId(String path) {
+    public CommitResult findLatestCommit(String path) {
       int index = Math.min(nextCommitIndex, commitIds.length - 1);
       nextCommitIndex++;
-      return commitIds[index];
+      return new CommitResult(GitStatus.SUCCESS, commitIds[index]);
+    }
+  }
+
+  private static class StatusGitActivityService extends GitActivityService {
+
+    private final GitStatus status;
+
+    private StatusGitActivityService(GitStatus status) {
+      this.status = status;
+    }
+
+    @Override
+    public CommitResult findLatestCommit(String path) {
+      return new CommitResult(status, null);
     }
   }
 }

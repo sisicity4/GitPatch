@@ -49,8 +49,12 @@ public class RepositoryService {
     }
 
     RepositoryProfile repository = repositories.get(index);
+    String previousPath = repository.getPath();
     repository.setRepoName(repoName);
     repository.setPath(path);
+    if (!previousPath.equals(path)) {
+      repository.clearRewardedCommitIds();
+    }
     return RepositoryStatus.SUCCESS;
   }
 

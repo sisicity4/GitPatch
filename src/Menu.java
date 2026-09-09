@@ -319,18 +319,15 @@ public class Menu {
       return;
     }
 
-    GitActivityService.GitStatus status = gitActivityService.getStatus(
-      repository.getPath()
-    );
-    if (status != GitActivityService.GitStatus.SUCCESS) {
-      showGitStatusMessage(status);
+    GitActivityService.CommitResult latestCommit =
+      gitActivityService.findLatestCommit(repository.getPath());
+    if (latestCommit.getStatus() != GitActivityService.GitStatus.SUCCESS) {
+      showGitStatusMessage(latestCommit.getStatus());
       showActivityStreak();
       return;
     }
 
-    String latestCommitId = gitActivityService.findLatestCommitId(
-      repository.getPath()
-    );
+    String latestCommitId = latestCommit.getCommitId();
     if (!gitActivityService.isNewCommit(repository, latestCommitId)) {
       System.out.println("新しいGit活動はありません。");
       showActivityStreak();
