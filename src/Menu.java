@@ -30,13 +30,17 @@ public class Menu {
     Pet pet,
     PetService petService,
     GitActivityService gitActivityService,
-    RepositoryService repositoryService
+    RepositoryService repositoryService,
+    ActivityStreak activityStreak,
+    ActivityStreakService activityStreakService
   ) {
     scanner = new Scanner(System.in);
     this.pet = pet;
     this.petService = petService;
     this.gitActivityService = gitActivityService;
     this.repositoryService = repositoryService;
+    this.activityStreak = activityStreak;
+    this.activityStreakService = activityStreakService;
   }
 
   public void start() {
@@ -53,11 +57,12 @@ public class Menu {
         case "4" -> checkGitActivity();
         case "5" -> addRepository();
         case "6" -> showRepositories();
+        case "7" -> editRepository();
         case "0" -> {
           System.out.println("またね。ぱっちをよろしくね。");
           running = false;
         }
-        default -> System.out.println("0〜6の番号を入力してください。");
+        default -> System.out.println("0〜7の番号を入力してください。");
       }
     }
   }
@@ -71,6 +76,7 @@ public class Menu {
     System.out.println("4. Git活動を確認する");
     System.out.println("5. リポジトリを登録する");
     System.out.println("6. リポジトリ一覧を見る");
+    System.out.println("7. リポジトリを編集する");
     System.out.println("0. 終了する");
     System.out.print("番号を入力: ");
   }
@@ -135,9 +141,40 @@ public class Menu {
     }
   }
 
+  private void editRepository() {
+    int index = selectRepositoryIndex();
+    if (index < 0) {
+      return;
+    }
+
+    RepositoryProfile repository = repositoryService.findAll().get(index);
+    System.out.println("現在のリポジトリ名: " + repository.getRepoName());
+    System.out.println("現在のパス: " + repository.getPath());
+
+    System.out.print("新しいリポジトリ名を入力: ");
+    String repoName = scanner.nextLine().trim();
+    System.out.print("新しいリポジトリのファイルパスを入力: ");
+    String path = scanner.nextLine().trim();
+
+    RepositoryStatus status = repositoryService.update(index, repoName, path);
+    switch (status) {
+      case SUCCESS -> System.out.println("リポジトリを更新しました。");
+      case EMPTY_REPO_NAME -> System.out.println(
+        "リポジトリ名を入力してください。"
+      );
+      case EMPTY_PATH -> System.out.println(
+        "リポジトリのパスを入力してください。"
+      );
+      case DUPLICATE_PATH -> System.out.println(
+        "このパスはすでに登録されています。"
+      );
+      case INDEX_OUT_OF_RANGE -> System.out.println("編集できませんでした。");
+    }
+  }
+
   private void checkGitActivity() {
     RepositoryProfile repository = selectRepository();
-    if (repository != GitActivityService.GitStatus.SUCCESS) {
+    if (repository == null) {
       return;
     }
 
@@ -156,35 +193,48 @@ public class Menu {
       System.out.println("新しいGit活動はありません。");
       return;
     }
-
     petService.gainExperience(pet, 30);
-
     repository.setLastCheckedCommitId(latestCommitId);
+
+    activityStreakService.updateStreak(activityStreak);
     System.out.println("新しいコミットを確認！経験値を30得た！");
     showPetStatus();
   }
 
   private RepositoryProfile selectRepository() {
+    int index = selectRepositoryIndex();
+    if (index < 0) {
+      return null;
+    }
+    return repositoryService.findAll().get(index);
+  }
+
+  private int selectRepositoryIndex() {
     List<RepositoryProfile> repositories = repositoryService.findAll();
     if (repositories.isEmpty()) {
       System.out.println("先にリポジトリを登録してください。");
-      return null;
+      return -1;
     }
 
     showRepositories();
-    System.out.print("確認するリポジトリの番号を入力: ");
+    System.out.print("対象のリポジトリ番号を入力（0で取消）: ");
     String input = normalizeNumberInput(scanner.nextLine());
+
+    if (input.equals("0")) {
+      System.out.println("編集・確認を取り消しました。");
+      return -1;
+    }
 
     try {
       int index = Integer.parseInt(input) - 1;
       if (index < 0 || index >= repositories.size()) {
         System.out.println("一覧にある番号を入力してください。");
-        return null;
+        return -1;
       }
-      return repositories.get(index);
+      return index;
     } catch (NumberFormatException e) {
       System.out.println("数字を入力してください。");
-      return null;
+      return -1;
     }
   }
 

@@ -1,4 +1,6 @@
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 public class MainTest {
 
@@ -326,24 +328,35 @@ public class MainTest {
     testNextDayIncreasesStreak();
     testUpdateStreakResetsAfterGap();
     testUpdateStreakKeepsLongestRecord();
+    testPastActivityDateIsIgnored();
+  }
+
+  private static ActivityStreakService activityStreakServiceAt(String date) {
+    ZoneId zone = ZoneId.of("Asia/Tokyo");
+    LocalDate localDate = LocalDate.parse(date);
+    Clock clock = Clock.fixed(localDate.atStartOfDay(zone).toInstant(), zone);
+    return new ActivityStreakService(clock);
   }
 
   private static void testFirstActivityStartsStreak() {
     ActivityStreak streak = new ActivityStreak();
-    ActivityStreakService service = new ActivityStreakService();
+    ActivityStreakService service = activityStreakServiceAt("2026-09-05");
 
-    service.updateStreak(streak, LocalDate.of(2026, 9, 5));
+    service.updateStreak(streak);
 
     checkInt("初回の活動日は連続1日になる", 1, streak.getCurrentStreak());
+    checkTrue(
+      "初期の称号はNONEになる",
+      streak.getStreakName() == ActivityStreak.StreakName.NONE
+    );
   }
 
   private static void testSameDayDoesNotIncreaseStreak() {
     ActivityStreak streak = new ActivityStreak();
-    ActivityStreakService service = new ActivityStreakService();
-    LocalDate activityDate = LocalDate.of(2026, 9, 5);
+    ActivityStreakService service = activityStreakServiceAt("2026-09-05");
 
-    service.updateStreak(streak, activityDate);
-    service.updateStreak(streak, activityDate);
+    service.updateStreak(streak);
+    service.updateStreak(streak);
 
     checkInt(
       "同じ日の活動では連続日数が増えない",
@@ -354,20 +367,22 @@ public class MainTest {
 
   private static void testNextDayIncreasesStreak() {
     ActivityStreak streak = new ActivityStreak();
-    ActivityStreakService service = new ActivityStreakService();
+    ActivityStreakService firstDay = activityStreakServiceAt("2026-09-05");
+    ActivityStreakService nextDay = activityStreakServiceAt("2026-09-06");
 
-    service.updateStreak(streak, LocalDate.of(2026, 9, 5));
-    service.updateStreak(streak, LocalDate.of(2026, 9, 6));
+    firstDay.updateStreak(streak);
+    nextDay.updateStreak(streak);
 
     checkInt("翌日の活動で連続日数が増える", 2, streak.getCurrentStreak());
   }
 
   private static void testUpdateStreakResetsAfterGap() {
     ActivityStreak streak = new ActivityStreak();
-    ActivityStreakService service = new ActivityStreakService();
+    ActivityStreakService firstDay = activityStreakServiceAt("2026-09-05");
+    ActivityStreakService afterGap = activityStreakServiceAt("2026-09-07");
 
-    service.updateStreak(streak, LocalDate.of(2026, 9, 5));
-    service.updateStreak(streak, LocalDate.of(2026, 9, 7));
+    firstDay.updateStreak(streak);
+    afterGap.updateStreak(streak);
 
     checkInt(
       "活動日が空くと連続ストリークが1に戻る",
@@ -378,13 +393,33 @@ public class MainTest {
 
   private static void testUpdateStreakKeepsLongestRecord() {
     ActivityStreak streak = new ActivityStreak();
-    ActivityStreakService service = new ActivityStreakService();
-
-    service.updateStreak(streak, LocalDate.of(2026, 9, 8));
-    service.updateStreak(streak, LocalDate.of(2026, 9, 9));
-    service.updateStreak(streak, LocalDate.of(2026, 9, 10));
-    service.updateStreak(streak, LocalDate.of(2026, 9, 13));
+    activityStreakServiceAt("2026-09-08").updateStreak(streak);
+    activityStreakServiceAt("2026-09-09").updateStreak(streak);
+    activityStreakServiceAt("2026-09-10").updateStreak(streak);
+    activityStreakServiceAt("2026-09-13").updateStreak(streak);
 
     checkInt("最長記録を保持する", 3, streak.getLongestStreak());
+  }
+
+  private static void testPastActivityDateIsIgnored() {
+    ActivityStreak streak = new ActivityStreak();
+
+    activityStreakServiceAt("2026-09-09").updateStreak(streak);
+    activityStreakServiceAt("2026-09-08").updateStreak(streak);
+
+    checkInt(
+      "過去日の活動で連続日数が変わらない",
+      1,
+      streak.getCurrentStreak()
+    );
+    checkInt(
+      "過去日の活動で最長記録が変わらない",
+      1,
+      streak.getLongestStreak()
+    );
+    checkTrue(
+      "過去日の活動で最後の活動日が戻らない",
+      LocalDate.parse("2026-09-09").equals(streak.getLastActivityDate())
+    );
   }
 }

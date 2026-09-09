@@ -5,12 +5,13 @@ public class ActivityStreak {
   private int currentStreak;
   private int longestStreak;
   private LocalDate lastActivityDate;
-  private String streakName;
+  private StreakName streakName;
 
   public ActivityStreak() {
     setCurrentStreak(0);
     setLongestStreak(0);
     setLastActivityDate(null);
+    setStreakName(StreakName.NONE);
   }
 
   public enum StreakName {
@@ -44,11 +45,11 @@ public class ActivityStreak {
     this.lastActivityDate = lastActivityDate;
   }
 
-  public String getStreakName() {
+  public StreakName getStreakName() {
     return streakName;
   }
 
-  public void setStreakName(String streakName) {
-    this.streakName = streakName;
+  public void setStreakName(StreakName streakName) {
+    this.streakName = streakName == null ? StreakName.NONE : streakName;
   }
 }
