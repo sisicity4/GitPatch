@@ -33,7 +33,7 @@ javac -d bin src/*.java
 java -cp bin Main
 ```
 
-ペット機能の自動テストを実行する場合は、次を使います。
+機能の自動テストを実行する場合は、次を使います。
 
 ```sh
 java -cp bin MainTest

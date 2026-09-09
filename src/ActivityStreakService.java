@@ -1,5 +1,10 @@
 import java.time.Clock;
-public class ActivitySfinal Clock clock;
+import java.time.LocalDate;
+import java.util.Objects;
+
+public class ActivityStreakService {
+
+  private final Clock clock;
 
   public ActivityStreakService(Clock clock) {
     this.clock = Objects.requireNonNull(clock, "clock");
@@ -48,5 +53,6 @@ public class ActivitySfinal Clock clock;
     }
 
     streak.setLastActivityDate(activityDate);
+    streak.setStreakName(determineStreakName(streak.getCurrentStreak()));
   }
 }
