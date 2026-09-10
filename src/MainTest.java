@@ -31,6 +31,9 @@ public class MainTest {
     System.out.println("\n=== 5. Menu GitActivity ===");
     testMenuGitActivityAlwaysShowsStreak();
 
+    System.out.println("\n=== 6. Menu Full Flow ===");
+    testMenuFullInteractionFlow();
+
     System.out.println("\nすべてのテストが成功しました。");
   }
 
@@ -412,6 +415,86 @@ public class MainTest {
     testMenuShowsTitlesAtSevenAndFourteenDays();
     testMenuShowsResetMessageAfterGap();
     testMenuDoesNotRepeatMilestoneMessageAfterBoundary();
+  }
+
+  private static void testMenuFullInteractionFlow() {
+    Path repositoryPath = createGitRepository(true);
+    Pet pet = new Pet();
+    RepositoryService repositoryService = new RepositoryService();
+    ActivityStreakService activityStreakService = activityStreakServiceAt(
+      "2026-09-09"
+    );
+    String input = String.join(
+      System.lineSeparator(),
+      "3",
+      "1",
+      "統合テスト用リポジトリ",
+      repositoryPath.toString(),
+      "2",
+      "0",
+      "2",
+      "1",
+      "0",
+      "4",
+      "1",
+      "0",
+      ""
+    );
+
+    try {
+      Menu menu = new Menu(
+        pet,
+        new PetService(),
+        new GitActivityService(),
+        repositoryService,
+        new ActivityStreak(),
+        activityStreakService,
+        new Scanner(new StringReader(input))
+      );
+      String output = captureMenuOutput(menu);
+
+      checkInt(
+        "統合テスト後のリポジトリ数",
+        1,
+        repositoryService.findAll().size()
+      );
+      checkString(
+        "統合テストで登録したリポジトリ名",
+        "統合テスト用リポジトリ",
+        repositoryService.findAll().get(0).getRepoName()
+      );
+      checkInt("活動確認後の経験値", 30, pet.getExp());
+      checkContains(
+        "統合テストで一覧を表示する",
+        "統合テスト用リポジトリ",
+        output
+      );
+      checkContains(
+        "統合テストでお世話を実行する",
+        "満腹度が20回復した",
+        output
+      );
+      checkContains("統合テストでGit活動を確認する", "経験値を30得た", output);
+      checkContains(
+        "統合テストで終了する",
+        "またね。ぱっちをよろしくね。",
+        output
+      );
+    } finally {
+      deleteRecursively(repositoryPath);
+    }
+  }
+
+  private static String captureMenuOutput(Menu menu) {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    PrintStream originalOut = System.out;
+    try {
+      System.setOut(new PrintStream(output, true, StandardCharsets.UTF_8));
+      menu.start();
+    } finally {
+      System.setOut(originalOut);
+    }
+    return new String(output.toByteArray(), StandardCharsets.UTF_8);
   }
 
   private static void testMenuShowsStreakAfterNewCommit() {

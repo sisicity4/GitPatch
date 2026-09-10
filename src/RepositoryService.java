@@ -29,6 +29,10 @@ public class RepositoryService {
     return List.copyOf(repositories);
   }
 
+  public void addLoadedRepository(RepositoryProfile repository) {
+    repositories.add(repository);
+  }
+
   public RepositoryStatus update(int index, String repoName, String path) {
     if (index < 0 || index >= repositories.size()) {
       return RepositoryStatus.INDEX_OUT_OF_RANGE;
