@@ -6,7 +6,7 @@ import java.time.ZoneId;
 public class Main {
 
   private static Path getDataFile() {
-    return Paths.get("data.csv");
+    return Paths.get("data", "data.csv");
   }
 
   private static CsvStorage.AppState loadState(CsvStorage storage, Path file) {
@@ -58,11 +58,7 @@ public class Main {
     saveState(
       storage,
       dataFile,
-      new CsvStorage.AppState(
-        pet,
-        repositoryService.findAll(),
-        activityStreak
-      )
+      new CsvStorage.AppState(pet, repositoryService.findAll(), activityStreak)
     );
   }
 }

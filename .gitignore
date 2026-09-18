@@ -32,6 +32,10 @@ replay_pid*
 
 docs/ex/
 
+# テストファイル
+
+src/MainTest.java
+
 # 誤生成hooks(学習用)
 
 hooks/

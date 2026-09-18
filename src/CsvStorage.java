@@ -8,6 +8,8 @@ import java.util.List;
 
 public class CsvStorage {
 
+  private static final int CURRENT_VERSION = 1;
+
   public static record AppState(
     Pet pet,
     List<RepositoryProfile> repositories,
@@ -23,11 +25,30 @@ public class CsvStorage {
       Pet pet = new Pet();
       List<RepositoryProfile> repositories = new ArrayList<>();
       ActivityStreak activityStreak = new ActivityStreak();
+      boolean versionFound = false;
 
       for (String record : readCsvRecords(file)) {
+        if (record.isBlank()) {
+          continue;
+        }
         List<String> columns = parseCsvLine(record);
         validateRecord(columns);
+        if (columns.get(0).equals("VERSION")) {
+          if (
+            versionFound || Integer.parseInt(columns.get(1)) != CURRENT_VERSION
+          ) {
+            throw new IllegalArgumentException(
+              "CSVのバージョンが対応していません。"
+            );
+          }
+          versionFound = true;
+          continue;
+        }
         applyRecord(columns, pet, repositories, activityStreak);
+      }
+
+      if (!versionFound) {
+        throw new IllegalArgumentException("CSVにバージョン情報がありません。");
       }
 
       return new AppState(pet, repositories, activityStreak);
@@ -99,10 +120,11 @@ public class CsvStorage {
     }
 
     int expectedColumns = switch (columns.get(0)) {
-      case "PET" -> 5;
-      case "REPOSITORY" -> 4;
+      case "VERSION" -> 2;
       case "REWARDED_COMMIT" -> 3;
+      case "REPOSITORY" -> 4;
       case "STREAK" -> 4;
+      case "PET" -> 5;
       default -> throw new IllegalArgumentException("未知のCSVレコードです。");
     };
     if (columns.size() != expectedColumns) {
@@ -156,6 +178,7 @@ public class CsvStorage {
 
   private List<String> toCsvRecords(AppState state) {
     List<String> records = new ArrayList<>();
+    records.add(String.join(",", "VERSION", String.valueOf(CURRENT_VERSION)));
     Pet pet = state.pet();
     records.add(
       String.join(
