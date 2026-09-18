@@ -31,6 +31,11 @@ replay_pid*
 # 授業資料,リンク集 docs
 
 docs/ex/
+
+# 誤生成hooks(学習用)
+
+hooks/
+
 # エディター設定
 
 .zed
