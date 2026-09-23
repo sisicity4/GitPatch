@@ -31,6 +31,12 @@ replay_pid*
 # 授業資料,リンク集 docs
 
 docs/ex/
+
+# テストファイル
+
+src/MainTest.java
+
 # エディター設定
 
 .zed
+data/data.csv

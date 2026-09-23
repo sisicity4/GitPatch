@@ -42,6 +42,16 @@ public class RepositoryProfile {
     return commitId != null && rewardedCommitIds.contains(commitId);
   }
 
+  public Set<String> getRewardedCommitIds() {
+    return Set.copyOf(rewardedCommitIds);
+  }
+
+  public void addRewardedCommitId(String commitId) {
+    if (commitId != null && !commitId.isEmpty()) {
+      rewardedCommitIds.add(commitId);
+    }
+  }
+
   public void clearRewardedCommitIds() {
     rewardedCommitIds.clear();
     lastCheckedCommitId = null;
