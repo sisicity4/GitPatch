@@ -36,10 +36,6 @@ docs/ex/
 
 src/MainTest.java
 
-# 誤生成hooks(学習用)
-
-hooks/
-
 # エディター設定
 
 .zed
