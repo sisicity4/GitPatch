@@ -4,6 +4,9 @@ public class Pet {
   private static final int HUNGRY_THRESHOLD = 20;
   private static final int SAD_MOOD_THRESHOLD = 20;
   private static final int HAPPY_LEVEL_THRESHOLD = 5;
+  private static final int MAX_STATUS = 100;
+  private static final int FEED_HUNGER_AMOUNT = 20;
+  private static final int STROKE_MOOD_AMOUNT = 10;
 
   public enum Expression {
     HUNGRY,
@@ -71,5 +74,27 @@ public class Pet {
 
   void setMood(int mood) {
     this.mood = Math.clamp(mood, 0, 100);
+  }
+
+  public void gainExperience(int amount) {
+    if (amount <= 0) {
+      return;
+    }
+
+    setExp(getExp() + amount);
+
+    while (getExp() >= getLevel() * 100) {
+      int requiredExp = getLevel() * 100;
+      setExp(getExp() - requiredExp);
+      setLevel(getLevel() + 1);
+    }
+  }
+
+  public void feed() {
+    setHunger(Math.min(MAX_STATUS, getHunger() + FEED_HUNGER_AMOUNT));
+  }
+
+  public void stroke() {
+    setMood(Math.min(MAX_STATUS, getMood() + STROKE_MOOD_AMOUNT));
   }
 }
