@@ -21,47 +21,37 @@ public class Menu {
 
   private final Scanner scanner;
   private final Pet pet;
-  private final PetService petService;
-  private final GitActivityService gitActivityService;
+  private final GitService gitService;
   private final RepositoryService repositoryService;
   private final ActivityStreak activityStreak;
-  private final ActivityStreakService activityStreakService;
 
   public Menu(
     Pet pet,
-    PetService petService,
-    GitActivityService gitActivityService,
+    GitService gitService,
     RepositoryService repositoryService,
-    ActivityStreak activityStreak,
-    ActivityStreakService activityStreakService
+    ActivityStreak activityStreak
   ) {
     this(
       pet,
-      petService,
-      gitActivityService,
+      gitService,
       repositoryService,
       activityStreak,
-      activityStreakService,
       new Scanner(System.in)
     );
   }
 
   Menu(
     Pet pet,
-    PetService petService,
-    GitActivityService gitActivityService,
+    GitService gitService,
     RepositoryService repositoryService,
     ActivityStreak activityStreak,
-    ActivityStreakService activityStreakService,
     Scanner scanner
   ) {
     this.scanner = scanner;
     this.pet = pet;
-    this.petService = petService;
-    this.gitActivityService = gitActivityService;
+    this.gitService = gitService;
     this.repositoryService = repositoryService;
     this.activityStreak = activityStreak;
-    this.activityStreakService = activityStreakService;
   }
 
   public void start() {
@@ -107,13 +97,13 @@ public class Menu {
   }
 
   private void feedPet() {
-    petService.feed(pet);
+    pet.feed();
     System.out.println("ぱっちはごはんを食べた。満腹度が20回復した！");
     showPetStatus();
   }
 
   private void strokePet() {
-    petService.stroke(pet);
+    pet.stroke();
     System.out.println("ぱっちをなでた。機嫌がよくなった！");
     showPetStatus();
   }
@@ -122,9 +112,7 @@ public class Menu {
     int current = activityStreak.getCurrentStreak();
     int longest = activityStreak.getLongestStreak();
 
-    ActivityStreak.StreakName name = activityStreakService.determineStreakName(
-      current
-    );
+    ActivityStreak.StreakName name = gitService.determineStreakName(current);
 
     System.out.println("連続活動：" + current + "日");
     System.out.println("最長記録：" + longest + "日");
@@ -319,16 +307,17 @@ public class Menu {
       return;
     }
 
-    GitActivityService.CommitResult latestCommit =
-      gitActivityService.findLatestCommit(repository.getPath());
-    if (latestCommit.getStatus() != GitActivityService.GitStatus.SUCCESS) {
+    GitService.CommitResult latestCommit = gitService.findLatestCommit(
+      repository.getPath()
+    );
+    if (latestCommit.getStatus() != GitService.GitStatus.SUCCESS) {
       showGitStatusMessage(latestCommit.getStatus());
       showActivityStreak();
       return;
     }
 
     String latestCommitId = latestCommit.getCommitId();
-    if (!gitActivityService.isNewCommit(repository, latestCommitId)) {
+    if (!gitService.isNewCommit(repository, latestCommitId)) {
       System.out.println("新しいGit活動はありません。");
       showActivityStreak();
       return;
@@ -336,10 +325,10 @@ public class Menu {
 
     int previousStreak = activityStreak.getCurrentStreak();
     LocalDate previousActivityDate = activityStreak.getLastActivityDate();
-    petService.gainExperience(pet, 30);
+    pet.gainExperience(30);
     repository.setLastCheckedCommitId(latestCommitId);
 
-    activityStreakService.updateStreak(activityStreak);
+    gitService.updateStreak(activityStreak);
     System.out.println("新しいコミットを確認！経験値を30得た！");
     showActivityAchievement(previousStreak, previousActivityDate);
     showActivityStreak();
@@ -383,7 +372,7 @@ public class Menu {
     }
   }
 
-  private void showGitStatusMessage(GitActivityService.GitStatus status) {
+  private void showGitStatusMessage(GitService.GitStatus status) {
     switch (status) {
       case EMPTY_PATH -> System.out.println(
         "リポジトリのパスが空です。登録内容を確認してください。"

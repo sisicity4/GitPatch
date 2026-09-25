@@ -35,24 +35,15 @@ public class Main {
     Path dataFile = getDataFile();
     CsvStorage.AppState state = loadState(storage, dataFile);
     Pet pet = state.pet();
-    PetService petService = new PetService();
-    GitActivityService gitActivityService = new GitActivityService();
+    GitService gitService = new GitService(
+      Clock.system(ZoneId.of("Asia/Tokyo"))
+    );
     RepositoryService repositoryService = new RepositoryService();
     for (RepositoryProfile repository : state.repositories()) {
       repositoryService.addLoadedRepository(repository);
     }
     ActivityStreak activityStreak = state.activityStreak();
-    ActivityStreakService activityStreakService = new ActivityStreakService(
-      Clock.system(ZoneId.of("Asia/Tokyo"))
-    );
-    Menu menu = new Menu(
-      pet,
-      petService,
-      gitActivityService,
-      repositoryService,
-      activityStreak,
-      activityStreakService
-    );
+    Menu menu = new Menu(pet, gitService, repositoryService, activityStreak);
 
     menu.start();
     saveState(
