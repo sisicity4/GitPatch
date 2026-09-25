@@ -4,11 +4,20 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
-public class GitActivityService {
+public class GitService {
+
+  private final Clock clock;
+
+  public GitService(Clock clock) {
+    this.clock = Objects.requireNonNull(clock, "clock");
+  }
 
   public enum GitStatus {
     SUCCESS,
@@ -137,6 +146,58 @@ public class GitActivityService {
       return false;
     }
     return !repository.hasRewardedCommitId(latestCommitId);
+  }
+
+  public void updateStreak(ActivityStreak streak) {
+    if (streak == null) {
+      return;
+    }
+    updateStreakAtDate(streak, LocalDate.now(clock));
+  }
+
+  public ActivityStreak.StreakName determineStreakName(int currentStreak) {
+    if (currentStreak >= 14) {
+      return ActivityStreak.StreakName.GIT_STAR;
+    }
+    if (currentStreak >= 7) {
+      return ActivityStreak.StreakName.ACTIVE_CONTRIBUTOR;
+    }
+    if (currentStreak >= 3) {
+      return ActivityStreak.StreakName.GIT_DEVELOPER;
+    }
+    if (currentStreak >= 2) {
+      return ActivityStreak.StreakName.STREAK_KEEPER;
+    }
+    if (currentStreak >= 1) {
+      return ActivityStreak.StreakName.COMMIT_ROOKIE;
+    }
+    return ActivityStreak.StreakName.NONE;
+  }
+
+  private void updateStreakAtDate(
+    ActivityStreak streak,
+    LocalDate activityDate
+  ) {
+    LocalDate lastActivityDate = streak.getLastActivityDate();
+
+    if (lastActivityDate == null) {
+      streak.setCurrentStreak(1);
+    } else if (activityDate.isBefore(lastActivityDate)) {
+      return;
+    } else if (lastActivityDate.equals(activityDate)) {
+      return;
+    } else if (lastActivityDate.plusDays(1).equals(activityDate)) {
+      streak.setCurrentStreak(streak.getCurrentStreak() + 1);
+    } else {
+      streak.setCurrentStreak(1);
+    }
+
+    if (streak.getCurrentStreak() > streak.getLongestStreak()) {
+      streak.setLongestStreak(streak.getCurrentStreak());
+    }
+
+    streak.setLastActivityDate(activityDate);
+    streak.setStreakName(determineStreakName(streak.getCurrentStreak()));
   }
 
   private CommandResult runGitCommand(String path, String... arguments) {
